@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
+    <title>TargetFlow | Master Your Time</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --danger: #ef4444;
+            --transition: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; padding: 20px; position: relative; }
+
+        /* --- GREETING --- */
+        .header { text-align: center; padding: 50px 0 30px 0; }
+        .greeting-text { font-size: 1.8rem; font-weight: 800; }
+        .letter {
+            display: inline-block; transform: translateY(110%); opacity: 0;
+            animation: revealLetter 0.8s var(--transition) forwards;
+            background: linear-gradient(90deg, #1e293b, #6366f1, #1e293b);
+            background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        @keyframes revealLetter { to { transform: translateY(0); opacity: 1; } }
+        .shimmer { animation: shimmerEffect 3s linear infinite; }
+        @keyframes shimmerEffect { to { background-position: 200% center; } }
+
+        /* --- TABS --- */
+        .tabs-container {
+            display: flex; overflow-x: auto; gap: 10px; padding: 10px 5px;
+            scrollbar-width: none;
+        }
+        .tabs-container::-webkit-scrollbar { display: none; }
+        .tab {
+            padding: 10px 20px; background: #eef2f6; border-radius: 25px;
+            white-space: nowrap; font-size: 0.85rem; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; transition: 0.3s;
+        }
+        .tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px var(--primary-glow); }
+
+        /* --- TARGET CARDS --- */
+        .target-list { margin-top: 25px; display: flex; flex-direction: column; gap: 15px; padding-bottom: 100px; }
+        
+        .target-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            animation: slideIn 0.4s var(--transition);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .target-info h3 { font-size: 1.1rem; margin-bottom: 4px; }
+        .target-info p { font-size: 0.9rem; color: var(--text-muted); }
+        
+        .delete-btn {
+            background: #fee2e2; color: var(--danger);
+            border: none; padding: 8px; border-radius: 10px; cursor: pointer;
+            font-size: 0.8rem; font-weight: bold;
+        }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); display: none; align-items: flex-end;
+            justify-content: center; z-index: 1000; backdrop-filter: blur(4px);
+        }
+        .modal {
+            background: white; width: 100%; max-width: 480px; padding: 25px;
+            border-radius: 24px 24px 0 0; transform: translateY(100%);
+            transition: transform 0.4s var(--transition);
+        }
+        .modal.active { transform: translateY(0); }
+        input, textarea {
+            width: 100%; padding: 14px; margin-bottom: 15px;
+            border: 1px solid #e2e8f0; border-radius: 12px; outline: none; font-family: inherit;
+        }
+        .modal-actions { display: flex; gap: 12px; }
+        .btn { flex: 1; padding: 14px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #f1f5f9; color: var(--text-muted); }
+
+        .fab {
+            position: fixed; bottom: 30px; right: 30px; width: 56px; height: 56px;
+            background: var(--primary); color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 28px;
+            box-shadow: 0 8px 20px var(--primary-glow); cursor: pointer; border: none;
+        }
+    </style>
+</head>
+<body>
+<div id="lockScreen" style="
+  position: fixed;
+  inset: 0;
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+">
+  <div style="
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+  ">
+    <h3>🔐 Enter Password</h3>
+    <input id="passwordInput" type="password"
+      style="width:100%;padding:12px;margin:15px 0;"
+      placeholder="Password">
+    <button onclick="unlockApp()"
+      style="width:100%;padding:12px;background:#6366f1;color:white;border:none;border-radius:10px;">
+      Unlock
+    </button>
+  </div>
+</div>
+
+    <div class="app-container">
+        <header class="header">
+            <div class="greeting-text">Hello <span id="name-container"></span></div>
+        </header>
+
+        <nav class="tabs-container" id="tabs">
+            <div class="tab active">Daily</div>
+            <div class="tab">Weekly</div>
+            <div class="tab">Fortnightly</div>
+            <div class="tab">Monthly</div>
+            <div class="tab">Quarterly</div>
+            <div class="tab">Half-Yearly</div>
+            <div class="tab">Yearly</div>
+        </nav>
+
+        <main class="target-list" id="targetList"></main>
+
+        <button class="fab" id="openModalBtn">+</button>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <div style="width: 40px; height: 4px; background: #e2e8f0; border-radius: 10px; margin: 0 auto 15px auto;"></div>
+            <h3 style="margin-bottom: 20px;">New <span id="categoryLabel"></span> Target</h3>
+            <input type="text" id="targetTitle" placeholder="Title (e.g. Read 10 pages)">
+            <textarea id="targetDesc" placeholder="Details (optional)"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="closeModalBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveBtn">Save Target</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        const APP_PASSWORD = "312505"; // change this
+
+function unlockApp() {
+  const entered = document.getElementById('passwordInput').value;
+
+  if (entered === APP_PASSWORD) {
+    sessionStorage.setItem('unlocked', 'yes');
+    document.getElementById('lockScreen').style.display = 'none';
+  } else {
+    alert("Wrong password");
+  }
+}
+
+if (sessionStorage.getItem('unlocked') === 'yes') {
+  document.getElementById('lockScreen').style.display = 'none';
+}
+
+        // --- DATA STATE ---
+        let targets = JSON.parse(localStorage.getItem('targets')) || [];
+        let currentCategory = 'Daily';
+        
+        function saveToStorage() {
+  localStorage.setItem('targets', JSON.stringify(targets));
+}
+
+
+        // --- DOM ELEMENTS ---
+        const targetList = document.getElementById('targetList');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modal = document.getElementById('modal');
+        const nameContainer = document.getElementById('name-container');
+
+        // --- PHASE 2: INTRO ---
+        "Kingshuk!".split('').forEach((char, i) => {
+            const span = document.createElement('span');
+            span.textContent = char;
+            span.className = 'letter';
+            span.style.animationDelay = `${i * 0.08}s`;
+            if (i === 7) span.addEventListener('animationend', () => nameContainer.classList.add('shimmer'));
+            nameContainer.appendChild(span);
+        });
+
+        // --- PHASE 4: LOGIC ---
+        function render() {
+            targetList.innerHTML = '';
+            const filtered = targets.filter(t => t.category === currentCategory);
+            
+            if (filtered.length === 0) {
+                targetList.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:40px;">No ${currentCategory} targets yet.</p>`;
+                return;
+            }
+
+            filtered.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'target-card';
+                card.innerHTML = `
+                    <div class="target-info">
+                        <h3>${t.title}</h3>
+                        <p>${t.description || 'No description'}</p>
+                    </div>
+                    <button class="delete-btn" onclick="deleteTarget(${t.id})">Delete</button>
+                `;
+                targetList.appendChild(card);
+            });
+        }
+
+        function addTarget() {
+            const title = document.getElementById('targetTitle').value;
+            const desc = document.getElementById('targetDesc').value;
+            if (!title) return alert("Please enter a title");
+
+            const newTarget = {
+                id: Date.now(),
+                title,
+                description: desc,
+                category: currentCategory
+            };
+
+            targets.push(newTarget);
+            saveToStorage();
+            closeModal();
+            render();
+            
+            // Reset inputs
+            document.getElementById('targetTitle').value = '';
+            document.getElementById('targetDesc').value = '';
+        }
+
+        function deleteTarget(id) {
+            targets = targets.filter(t => t.id !== id);
+            saveToStorage();
+            render();
+        }
+
+        // --- EVENTS ---
+        document.getElementById('openModalBtn').onclick = () => {
+            document.getElementById('categoryLabel').textContent = currentCategory;
+            modalOverlay.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+        };
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            setTimeout(() => modalOverlay.style.display = 'none', 400);
+        };
+
+        document.getElementById('closeModalBtn').onclick = closeModal;
+        document.getElementById('saveBtn').onclick = addTarget;
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.onclick = (e) => {
+                document.querySelector('.tab.active').classList.remove('active');
+                e.target.classList.add('active');
+                currentCategory = e.target.textContent;
+                render();
+            };
+        });
+
+        render(); // Initial empty state
+        if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js')
+    .then(() => console.log('Service Worker registered'));
+}
+    </script>
+</body>
+</html>
